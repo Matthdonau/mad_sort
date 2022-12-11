@@ -17,7 +17,7 @@ set(MAD_SORT_HEADERS
 )
 
 # Compile options
-add_compile_options(-Wall -Wextra -Wpedantic -O2)
+add_compile_options(-Wall -Wextra -Wpedantic -O2 -g3)
 
 # Generate a library as well
 add_library(mad_sort_lib SHARED ${MAD_SORT_SOURCES} ${MAD_SORT_HEADERS})

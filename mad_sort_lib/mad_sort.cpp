@@ -2,6 +2,7 @@
 #include <iostream>
 #include <functional>
 #include <algorithm>
+#include <limits>
 #include "mad_sort.hpp"
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -77,31 +78,50 @@ void QuickSortBaseLine(std::vector<T> &in)
 }
 template void QuickSortBaseLine<int>(std::vector<int> &in);
 
-
-
 /*---------------------------------------------------------------------------*/
 /*----------------------------------- NEON ----------------------------------*/
 /*---------------------------------------------------------------------------*/
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 
-size_t inline MADSortPartition(std::vector<int32_t> &in, size_t low, size_t high)
+// Quick-Sort
+size_t inline MADQuickSortPartition(std::vector<int32_t> &in, size_t low, size_t high)
 {
     // Partition
     int32_t pivot = in[low];
     size_t num_left = 0;
     size_t curr = low + 1;
+    size_t counter = 0;
 
+    // Constants for bi manipulation stuff
+    int32x4_t sum = vmovq_n_s32(0);
+    int32x4_t const one = vmovq_n_s32(1);
+    size_t max_sum = std::numeric_limits<int32_t>::max() / 4;
     if (high >= 4)
     {
         for (; curr <= high - 4; curr += 4)
         {
+            // Since we cann only accumulate to int_32 max value we sometimes have to accumulate sequentially,
+            // add it to the overall num and zero out the sum.
+            if (counter >= max_sum)
+            {
+                int32_t const num = vaddvq_s32(sum);
+                num_left += num;
+                sum = vmovq_n_s32(0);
+                counter=0;
+            }
+
             // Find number of elements smaller than current or euqal to current pivot.
             int32x4_t const input = vld1q_s32(&in[curr]);
             int32x4_t const to_compare = vmovq_n_s32(pivot);
             int32x4_t const res = vcleq_s32(input, to_compare);
-            int32_t const num = vaddvq_s32(res);
-
-            num_left += -num;
+            int32x4_t const summand = vandq_s32(res, one);
+            sum = vaddq_s32(sum, summand);
+            counter++;
+        }
+        if (counter > 0)
+        {
+            int32_t const num = vaddvq_s32(sum);
+            num_left += num;
         }
     }
     // Remainder
@@ -117,14 +137,50 @@ size_t inline MADSortPartition(std::vector<int32_t> &in, size_t low, size_t high
 
     // Put every element > pivot right to the pivot index and
     // every element <= pivot left to the pivot index.
-
     size_t i = low, j = high;
+    size_t last_i = low;
+    size_t last_j = high;
     while (i < pivot_idx && j > pivot_idx)
     {
 
+        // Find first element left to pivot_idx which is greater than pivot.
+        int32_t num = 0;
+        if (i >= last_i + (-num))
+        {
+            for (size_t indx = i; indx < pivot_idx - 4; indx += 4) // pivot_idx -4 might be a problem due to size_t
+            {
+                i = last_i = indx;
+                int32x4_t const input = vld1q_s32(&in[indx]);
+                int32x4_t const to_compare = vmovq_n_s32(pivot);
+                int32x4_t const res = vcleq_s32(input, to_compare);
+                num = vaddvq_s32(res);
+
+                if (num != -4)
+                    break;
+            }
+        }
+        // Either there is less than 4 elements left to pivot_idx or we did find a 4-pack
+        // of which at least one isnt greater than pivot. Find which one of them and proceed.
         while (in[i] <= pivot)
             i++;
 
+        // Find first element which is right to pivot_idx and smaller than pivot.
+        if (pivot_idx >= 3 && j >= 3 && j + 4 <= last_j)
+        {
+            for (size_t indx = j - 3; indx > pivot_idx; indx -= 4)
+            {
+                j = last_j = j;
+                int32x4_t const input = vld1q_s32(&in[indx]);
+                int32x4_t const to_compare = vmovq_n_s32(pivot);
+                int32x4_t const res = vcgtq_s32(input, to_compare);
+                int32_t const num = vaddvq_s32(res);
+
+                if (num != -4)
+                    break;
+            }
+        }
+        // Either there is less than 4 elements left to pivot_idx or we did find a 4-pack
+        // of which at least one isnt smaller than pivot. Find which one of them and proceed.
         while (in[j] > pivot)
             j--;
 
@@ -136,19 +192,19 @@ size_t inline MADSortPartition(std::vector<int32_t> &in, size_t low, size_t high
     return pivot_idx;
 }
 
-void inline MADSortBaseLineAlgo(std::vector<int32_t> &in, size_t low, size_t high)
+void inline MADQuickSortBaseLineAlgo(std::vector<int32_t> &in, size_t low, size_t high)
 {
     // Exit condition
     if (low >= high)
         return;
 
-    size_t pivot = MADSortPartition(in, low, high);
+    size_t pivot = MADQuickSortPartition(in, low, high);
 
     // Call QSort recursive with both sides of pivot.
     if (pivot > low)
-        MADSortBaseLineAlgo(in, low, pivot - 1);
+        MADQuickSortBaseLineAlgo(in, low, pivot - 1);
     if (pivot < high)
-        MADSortBaseLineAlgo(in, pivot + 1, high);
+        MADQuickSortBaseLineAlgo(in, pivot + 1, high);
 }
 
 void MADSort(std::vector<int32_t> &in)
@@ -158,7 +214,7 @@ void MADSort(std::vector<int32_t> &in)
     // Therefore only use NEON instructions if "in" holds more than 4 elements.
     if (in.size() >= 4)
     {
-        MADSortBaseLineAlgo(in, 0, in.size() - 1);
+        MADQuickSortBaseLineAlgo(in, 0, in.size() - 1);
     }
     else
         STDSort(in);
