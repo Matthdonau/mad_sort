@@ -8,7 +8,7 @@
     cmake  -DCMAKE_BUILD_TYPE=Release ../
     
     # Build the library, tests and benchmarks
-    cmake --build.
+    cmake --build .
 
     # Run tests
     mad_sort_lib_tests/mad_sort_lib_tests
