@@ -19,7 +19,7 @@ static void BM_QuickSortBaseLineInt(benchmark::State &state)
   std::vector<int> Test(state.range(0));
   std::generate(Test.begin(), Test.end(), std::rand);
   for (auto _ : state)
-    QuickSortBaseLine(Test);
+    mad_sort::QuickSortBaseLine(Test);
 }
 BENCHMARK(BM_QuickSortBaseLineInt)->Range(8, 8 << 13)->Unit(benchmark::kMicrosecond);
 
@@ -29,7 +29,7 @@ static void BM_MADSortInt(benchmark::State &state)
   std::vector<int> Test(state.range(0));
   std::generate(Test.begin(), Test.end(), std::rand);
   for (auto _ : state)
-    MADSort(Test);
+    mad_sort::MADSort(Test);
 }
 BENCHMARK(BM_MADSortInt)->Range(8, 8 << 13)->Unit(benchmark::kMicrosecond);
 

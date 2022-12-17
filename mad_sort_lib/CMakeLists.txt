@@ -9,7 +9,6 @@ set (CXX_STANDARD_REQUIRED ON)
 
 # Source files
 set(MAD_SORT_SOURCES
-    "main.cpp"
     "mad_sort.cpp"
 )
 set(MAD_SORT_HEADERS
@@ -17,6 +16,7 @@ set(MAD_SORT_HEADERS
 )
 
 # Compile options
+# -g to have symbols for performance profiling
 add_compile_options(-Wall -Wextra -Wpedantic -O2 -g3)
 
 # Generate a library as well

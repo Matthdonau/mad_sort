@@ -8,7 +8,7 @@ set (CMAKE_CXX_STANDARD 11)
 set (CXX_STANDARD_REQUIRED ON)
 
 # Compile options
-add_compile_options(-Wall -Wextra -pedantic -Werror -g3)
+add_compile_options(-Wall -Wextra -pedantic -Werror)
 
 # Generate executable
 add_executable(mad_sort_lib_benchmarks)
