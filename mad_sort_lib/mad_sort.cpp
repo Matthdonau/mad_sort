@@ -93,7 +93,7 @@ namespace mad_sort
         size_t curr = low + 1;
         size_t counter = 0;
 
-        // Constants for bi manipulation stuff
+        // Constants for bit manipulation stuff
         int32x4_t sum = vmovq_n_s32(0);
         int32x4_t const one = vmovq_n_s32(1);
         size_t max_sum = std::numeric_limits<int32_t>::max() / 4;
