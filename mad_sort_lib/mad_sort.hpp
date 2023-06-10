@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 
 #ifndef MAD_SORT_HPP
 #define MAD_SORT_HPP
@@ -37,4 +38,4 @@ namespace mad_sort
 #endif
 }
 
-#endif //#ifndef MAD_SORT_HPP
+#endif // #ifndef MAD_SORT_HPP
